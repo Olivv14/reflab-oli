@@ -171,10 +171,3 @@ AI is used to assist development, but:
 Private project. License to be defined.
 
 ```
-
----
-
-If you want next, I can:
-- add a **“Team Roles & Ownership”** section
-- or write a **Phase 2 checklist** directly inside the README
-```
