@@ -18,7 +18,7 @@ import BannerLogo from "@/assets/logos/Banner RefLab No BG.svg";
 
 export default function HeroSection() {
   return (
-    <section className="px-6 py-12 text-center">
+    <section className="px-6 pt-8 pb-4 text-center">
       {/* Logo container - centered with responsive sizing */}
       <div className="flex justify-center mb-6">
         <img

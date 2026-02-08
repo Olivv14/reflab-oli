@@ -1,6 +1,186 @@
--- seed.sql
--- Minimal seed for MVP: a few tests + placeholder questions
+-- tests_setup.sql
+-- One-shot setup for the Tests feature: schema + RLS + seed content.
+--
+-- Use this if you're running SQL manually in the Supabase SQL editor and
+-- you want a single script (instead of running migrations + seed separately).
 
+begin;
+
+-- Enable UUID generation if not enabled (Supabase usually has it)
+create extension if not exists "pgcrypto";
+
+-- 1) tests
+create table if not exists public.tests (
+  id uuid primary key default gen_random_uuid(),
+  slug text not null unique,
+  title text not null,
+  is_active boolean not null default true,
+  updated_at timestamptz not null default now()
+);
+
+-- 2) test_questions
+create table if not exists public.test_questions (
+  id uuid primary key default gen_random_uuid(),
+  test_id uuid not null references public.tests(id) on delete cascade,
+  order_index int not null,
+  question_text text not null,
+  option_a text not null,
+  option_b text not null,
+  option_c text not null,
+  option_d text not null,
+  correct_option text not null check (correct_option in ('A','B','C','D')),
+  updated_at timestamptz not null default now(),
+  unique(test_id, order_index)
+);
+
+-- 3) test_attempts
+create table if not exists public.test_attempts (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  test_id uuid not null references public.tests(id) on delete cascade,
+  status text not null check (status in ('in_progress','submitted')) default 'in_progress',
+  started_at timestamptz not null default now(),
+  submitted_at timestamptz null,
+  score_correct int null,
+  score_total int null,
+  score_percent numeric null,
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_test_attempts_user_test_status
+  on public.test_attempts (user_id, test_id, status);
+
+-- 4) test_attempt_answers
+create table if not exists public.test_attempt_answers (
+  id uuid primary key default gen_random_uuid(),
+  attempt_id uuid not null references public.test_attempts(id) on delete cascade,
+  question_id uuid not null references public.test_questions(id) on delete cascade,
+  selected_option text not null check (selected_option in ('A','B','C','D')),
+  is_correct boolean null,
+  confirmed_at timestamptz not null default now(),
+
+  -- AI cache (for wrong answers)
+  ai_explanation text null,
+  ai_explanation_created_at timestamptz null,
+
+  unique(attempt_id, question_id)
+);
+
+create index if not exists idx_attempt_answers_attempt
+  on public.test_attempt_answers (attempt_id);
+
+create index if not exists idx_attempt_answers_question
+  on public.test_attempt_answers (question_id);
+
+-- updated_at helper + triggers
+create or replace function public.set_updated_at()
+returns trigger as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$ language plpgsql;
+
+drop trigger if exists trg_tests_updated_at on public.tests;
+create trigger trg_tests_updated_at
+before update on public.tests
+for each row execute function public.set_updated_at();
+
+drop trigger if exists trg_test_questions_updated_at on public.test_questions;
+create trigger trg_test_questions_updated_at
+before update on public.test_questions
+for each row execute function public.set_updated_at();
+
+drop trigger if exists trg_test_attempts_updated_at on public.test_attempts;
+create trigger trg_test_attempts_updated_at
+before update on public.test_attempts
+for each row execute function public.set_updated_at();
+
+-- RLS
+alter table public.tests enable row level security;
+alter table public.test_questions enable row level security;
+alter table public.test_attempts enable row level security;
+alter table public.test_attempt_answers enable row level security;
+
+drop policy if exists "tests_select_authenticated" on public.tests;
+create policy "tests_select_authenticated"
+on public.tests for select
+to authenticated
+using (true);
+
+drop policy if exists "test_questions_select_authenticated" on public.test_questions;
+create policy "test_questions_select_authenticated"
+on public.test_questions for select
+to authenticated
+using (true);
+
+drop policy if exists "test_attempts_select_own" on public.test_attempts;
+create policy "test_attempts_select_own"
+on public.test_attempts for select
+to authenticated
+using (auth.uid() = user_id);
+
+drop policy if exists "test_attempts_insert_own" on public.test_attempts;
+create policy "test_attempts_insert_own"
+on public.test_attempts for insert
+to authenticated
+with check (auth.uid() = user_id);
+
+drop policy if exists "test_attempts_update_own" on public.test_attempts;
+create policy "test_attempts_update_own"
+on public.test_attempts for update
+to authenticated
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+drop policy if exists "attempt_answers_select_own" on public.test_attempt_answers;
+create policy "attempt_answers_select_own"
+on public.test_attempt_answers for select
+to authenticated
+using (
+  exists (
+    select 1
+    from public.test_attempts a
+    where a.id = attempt_id
+      and a.user_id = auth.uid()
+  )
+);
+
+drop policy if exists "attempt_answers_insert_own" on public.test_attempt_answers;
+create policy "attempt_answers_insert_own"
+on public.test_attempt_answers for insert
+to authenticated
+with check (
+  exists (
+    select 1
+    from public.test_attempts a
+    where a.id = attempt_id
+      and a.user_id = auth.uid()
+  )
+);
+
+drop policy if exists "attempt_answers_update_own" on public.test_attempt_answers;
+create policy "attempt_answers_update_own"
+on public.test_attempt_answers for update
+to authenticated
+using (
+  exists (
+    select 1
+    from public.test_attempts a
+    where a.id = attempt_id
+      and a.user_id = auth.uid()
+  )
+)
+with check (
+  exists (
+    select 1
+    from public.test_attempts a
+    where a.id = attempt_id
+      and a.user_id = auth.uid()
+  )
+);
+
+-- Seed content (idempotent upserts)
 insert into public.tests (slug, title, is_active)
 values
   ('offside-basics', 'Offside Basics', true),
@@ -11,7 +191,7 @@ on conflict (slug) do update set
   title = excluded.title,
   is_active = excluded.is_active;
 
--- Insert questions for the test
+-- Offside Basics
 with t as (
   select id as test_id from public.tests where slug = 'offside-basics'
 )
@@ -133,3 +313,6 @@ on conflict (test_id, order_index) do update set
   option_c = excluded.option_c,
   option_d = excluded.option_d,
   correct_option = excluded.correct_option;
+
+commit;
+

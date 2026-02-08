@@ -115,7 +115,7 @@ export default function PricingSection() {
   };
 
   return (
-    <section className="py-12 overflow-hidden">
+    <section className="py-4 overflow-hidden">
       {/* Inject custom styles to keep slides always visible */}
       <style>{swiperStyles}</style>
 

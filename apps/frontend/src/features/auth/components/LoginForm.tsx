@@ -95,7 +95,7 @@ export default function LoginForm({ onForgotPassword }: LoginFormProps) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-(--bg-primary) p-4">
+    <div className="flex items-center justify-center bg-(--bg-primary) p-4">
       
       {/* TARJETA PRINCIPAL */}
       <div className="w-full max-w-md p-8 bg-(--bg-surface) border border-(--border-subtle) rounded-(--radius-card) shadow-(--shadow-soft)">

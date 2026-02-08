@@ -12,14 +12,15 @@ import LeaderboardPage from "@/features/leaderboard/components/LeaderboardPage";
 import ProfilePage from "@/features/profile/components/ProfilePage";
 import EditProfilePage from "../features/profile/components/EditProfilePage";
 import RequireAuth from "./RequireAuth";
+import RequireGuest from "./RequireGuest";
 import AppShell from "./AppShell";
 
 export default function Router() {
   return (
     <Routes>
       <Route element={<Layout />}>
-        {/* Public routes */}
-        <Route path="/" element={<LandingPage />} />
+        {/* Public routes - landing page only for non-authenticated users */}
+        <Route path="/" element={<RequireGuest><LandingPage /></RequireGuest>} />
         <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* Protected routes - wrapped in auth check and app layout */}
