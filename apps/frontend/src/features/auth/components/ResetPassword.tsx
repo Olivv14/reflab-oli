@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "./AuthProvider";
+import { useAuth } from "./useAuth";
 
 /**
  * ResetPassword - Page for setting a new password after clicking reset link
@@ -91,9 +91,9 @@ export default function ResetPassword() {
   // Show success message and redirect
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
+      <div className="min-h-screen flex items-center justify-center px-4 bg-(--bg-primary)">
         <div className="w-full max-w-md text-center">
-          <div className="p-4 bg-green-50 border border-green-200 text-green-700 rounded-md">
+          <div className="p-4 rounded-(--radius-card) bg-(--success)/10 border border-(--success)/20 text-(--success)">
             <h2 className="text-lg font-semibold mb-2">Password updated!</h2>
             <p>Redirecting you to the dashboard...</p>
           </div>
@@ -103,12 +103,12 @@ export default function ResetPassword() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center px-4 bg-(--bg-primary)">
+      <div className="w-full max-w-md p-8 bg-(--bg-surface) border border-(--border-subtle) rounded-(--radius-card) shadow-(--shadow-soft)">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Set new password</h1>
-          <p className="mt-2 text-gray-600">
+          <h1 className="text-2xl font-bold text-(--text-primary)">Set new password</h1>
+          <p className="mt-2 text-(--text-secondary)">
             Enter your new password below.
           </p>
         </div>
@@ -116,16 +116,16 @@ export default function ResetPassword() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Error message */}
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm">
+            <div className="p-3 rounded-(--radius-input) bg-(--error)/10 border border-(--error)/20 text-(--error) text-sm text-center">
               {error}
             </div>
           )}
 
           {/* New password field */}
-          <div>
+          <div className="space-y-2">
             <label
               htmlFor="new-password"
-              className="block text-sm font-medium text-gray-700"
+              className="block text-sm font-medium text-(--text-secondary)"
             >
               New Password
             </label>
@@ -135,17 +135,25 @@ export default function ResetPassword() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={loading || !user}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+              className="w-full px-4 py-3 outline-none transition-all
+                bg-(--bg-surface-2) 
+                border border-(--border-subtle) 
+                rounded-(--radius-input) 
+                text-(--text-primary) 
+                placeholder-(--text-muted)
+                focus:border-(--brand-yellow) 
+                focus:ring-1 focus:ring-(--brand-yellow)
+                disabled:opacity-50 disabled:cursor-not-allowed"
               placeholder="••••••••"
             />
-            <p className="mt-1 text-xs text-gray-500">Minimum 6 characters</p>
+            <p className="text-xs text-(--text-muted)">Minimum 6 characters</p>
           </div>
 
           {/* Confirm password field */}
-          <div>
+          <div className="space-y-2">
             <label
               htmlFor="confirm-new-password"
-              className="block text-sm font-medium text-gray-700"
+              className="block text-sm font-medium text-(--text-secondary)"
             >
               Confirm New Password
             </label>
@@ -155,7 +163,15 @@ export default function ResetPassword() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               disabled={loading || !user}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+              className="w-full px-4 py-3 outline-none transition-all
+                bg-(--bg-surface-2) 
+                border border-(--border-subtle) 
+                rounded-(--radius-input) 
+                text-(--text-primary) 
+                placeholder-(--text-muted)
+                focus:border-(--brand-yellow) 
+                focus:ring-1 focus:ring-(--brand-yellow)
+                disabled:opacity-50 disabled:cursor-not-allowed"
               placeholder="••••••••"
             />
           </div>
@@ -164,7 +180,13 @@ export default function ResetPassword() {
           <button
             type="submit"
             disabled={loading || !user}
-            className="w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-3.5 px-4 font-bold transition-all transform active:scale-[0.98]
+              bg-(--brand-yellow) 
+              text-(--bg-primary) 
+              rounded-(--radius-button)
+              hover:bg-(--brand-yellow-soft) 
+              hover:shadow-[0_0_15px_rgb(var(--brand-yellow)_/_0.3)]
+              disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? "Updating..." : "Update password"}
           </button>
@@ -174,7 +196,7 @@ export default function ResetPassword() {
             <button
               type="button"
               onClick={() => navigate("/")}
-              className="text-sm text-blue-600 hover:text-blue-500"
+              className="text-sm font-medium text-(--brand-yellow) hover:text-(--brand-yellow-soft) hover:underline"
             >
               Back to login
             </button>

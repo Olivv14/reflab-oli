@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react'
+import { useEffect, useState, useCallback, useRef, type ReactNode } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
 import type { AuthContextType, AuthStatus, ProfileStatus } from '../types'
 import type { Profile } from '../api/profilesApi'
@@ -12,10 +12,10 @@ import {
   onAuthStateChange,
   getSession,
 } from '../api/authApi'
-import { getProfile, updateLastLogin, isProfileComplete } from '../api/profilesApi'
+import { getProfile, updateLastLogin, isProfileComplete, updateProfile } from '../api/profilesApi'
+import { supabase } from '@/lib/supabaseClient'
 import SessionExpiredModal from './SessionExpiredModal'
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+import { AuthContext } from './AuthContext'
 
 interface AuthProviderProps {
   children: ReactNode
@@ -34,38 +34,40 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Session expiry modal state
   const [sessionExpired, setSessionExpired] = useState(false)
 
-  // Track if user was previously authenticated (for detecting session expiry)
-  const [wasAuthenticated, setWasAuthenticated] = useState(false)
+  // Refs to track state inside event listeners without causing re-renders/stale closures
+  const isManualSignOut = useRef(false)
+  const previousUserRef = useRef<User | null>(null)
 
   // Fetch profile for a user
   const fetchProfile = useCallback(async (userId: string) => {
-    setProfileStatus('loading')
+    // Avoid setting loading if we are just refreshing data behind the scenes
+    if (!profile) setProfileStatus('loading')
 
     const { profile: fetchedProfile, error } = await getProfile(userId)
 
     if (error) {
       console.error('Failed to fetch profile:', error)
       setProfile(null)
-      setProfileStatus('incomplete')
+      setProfileStatus('incomplete') // Or 'error' if you have that status
       return
     }
 
     setProfile(fetchedProfile)
 
-    // Determine profile status based on completion (custom username + name)
-    if (isProfileComplete(fetchedProfile)) {
+    // Determine profile status based on completion
+    if (fetchedProfile && isProfileComplete(fetchedProfile)) {
       setProfileStatus('complete')
     } else {
       setProfileStatus('incomplete')
     }
-  }, [])
+  }, [profile])
 
-  // Refresh profile (callable from outside, e.g., after setting username)
+  // Refresh profile (callable from outside)
   const refreshProfile = useCallback(async () => {
-    if (user?.id) {
+    if (user && user.id) {
       await fetchProfile(user.id)
     }
-  }, [user?.id, fetchProfile])
+  }, [user, fetchProfile])
 
   // Dismiss session expired modal
   const dismissSessionExpired = useCallback(() => {
@@ -73,66 +75,71 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [])
 
   useEffect(() => {
-    // Check for existing session on mount
+    // 1. Check for existing session on mount
     getSession().then(async ({ session }) => {
       setSession(session)
       setUser(session?.user ?? null)
+      previousUserRef.current = session?.user ?? null
 
       if (session?.user) {
         setAuthStatus('authenticated')
-        setWasAuthenticated(true)
         await fetchProfile(session.user.id)
-
-        // Update last login timestamp
         updateLastLogin(session.user.id)
       } else {
         setAuthStatus('unauthenticated')
-        setProfileStatus('loading')
+        setProfileStatus('loading') // Reset profile status
       }
-
-      console.log('Initial session check:', session ? 'User exists' : 'No user')
     })
 
-    // Subscribe to auth state changes
+    // 2. Subscribe to auth state changes
     const unsubscribe = onAuthStateChange(async (event, session) => {
       console.log('Auth event:', event)
 
+      const currentUser = session?.user ?? null
+      
+      // Update core state
       setSession(session)
-      setUser(session?.user ?? null)
+      setUser(currentUser)
 
-      if (event === 'SIGNED_IN' && session?.user) {
-        setAuthStatus('authenticated')
-        setWasAuthenticated(true)
-        await fetchProfile(session.user.id)
-
-        // Update last login timestamp
-        updateLastLogin(session.user.id)
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        isManualSignOut.current = false // Reset manual flag
+        
+        if (currentUser) {
+          setAuthStatus('authenticated')
+          previousUserRef.current = currentUser
+          
+          // Only fetch profile if it's a fresh sign in or we don't have one
+          if (event === 'SIGNED_IN') {
+             await fetchProfile(currentUser.id)
+             updateLastLogin(currentUser.id)
+          }
+        }
       }
 
       if (event === 'SIGNED_OUT') {
-        // Check if this was an unexpected sign out (session expiry)
-        if (wasAuthenticated) {
+        // DETECT SESSION EXPIRY:
+        // If the user was previously logged in (previousUserRef) 
+        // AND it wasn't a manual logout (isManualSignOut)
+        // THEN it must be an expiration/invalidation.
+        if (previousUserRef.current && !isManualSignOut.current) {
           setSessionExpired(true)
         }
 
+        // Cleanup state
         setAuthStatus('unauthenticated')
         setProfile(null)
         setProfileStatus('loading')
-        setWasAuthenticated(false)
-      }
-
-      if (event === 'TOKEN_REFRESHED') {
-        // Session was refreshed, keep current state
-        console.log('Token refreshed successfully')
+        previousUserRef.current = null
       }
     })
 
     return () => {
       unsubscribe()
     }
-  }, [fetchProfile, wasAuthenticated])
+  }, [fetchProfile]) // Removed 'wasAuthenticated' to prevent listeners from detaching/reattaching
 
   // Auth action wrappers
+
   const signIn = async (email: string, password: string) => {
     const { error } = await signInWithPassword(email, password)
     return { error: error ? new Error(error.message) : null }
@@ -149,9 +156,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }
 
   const signOut = async () => {
-    // Intentional sign out - don't show expired modal
-    setWasAuthenticated(false)
+    // 1. Flag this as a manual action so the listener doesn't trigger the modal
+    isManualSignOut.current = true
+    
+    // 2. Optimistic UI update
+    setUser(null)
+    setSession(null)
+    setProfile(null)
+    setAuthStatus('unauthenticated')
+    previousUserRef.current = null
+    
+    // 3. Perform API call
     const { error } = await signOutApi()
+    
+    // 4. Reset flag after a delay (safety net)
+    setTimeout(() => { isManualSignOut.current = false }, 1000)
+
     return { error: error ? new Error(error.message) : null }
   }
 
@@ -162,6 +182,29 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const updatePassword = async (newPassword: string) => {
     const { error } = await updateUserPassword(newPassword)
+    return { error: error ? new Error(error.message) : null }
+  }
+
+  const updateUser = async (updates: Partial<Pick<Profile, 'username' | 'name' | 'photo_url'>>) => {
+    if (!user?.id) {
+      return { error: new Error('No authenticated user to update.') }
+    }
+    const { profile: updatedProfile, error } = await updateProfile(user.id, updates)
+    if (updatedProfile) {
+      setProfile(updatedProfile)
+    }
+    return { error: error ? new Error(error.message) : null }
+  }
+
+  const updateUserMetadata = async (updates: Partial<User["user_metadata"]>) => {
+    if (!user) {
+      return { error: new Error("No authenticated user to update metadata.") }
+    }
+    const { data, error } = await supabase.auth.updateUser({ data: updates })
+    // Optimistically update the local user state
+    if (data.user) {
+      setUser(data.user)
+    }
     return { error: error ? new Error(error.message) : null }
   }
 
@@ -181,6 +224,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     signOut,
     resetPassword,
     updatePassword,
+    updateUser,
+    updateUserMetadata,
   }
 
   return (
@@ -192,14 +237,4 @@ export function AuthProvider({ children }: AuthProviderProps) {
       />
     </AuthContext.Provider>
   )
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext)
-
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider')
-  }
-
-  return context
 }

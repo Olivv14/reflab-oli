@@ -6,6 +6,7 @@ function App() {
   // AuthProvider wraps everything so any component can access auth state
   // It must be inside BrowserRouter if auth functions need to use navigation
   return (
+    
     <BrowserRouter>
       <AuthProvider>
         <Router />

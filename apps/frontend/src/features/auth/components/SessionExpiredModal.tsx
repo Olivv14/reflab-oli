@@ -18,11 +18,11 @@ export default function SessionExpiredModal({ isOpen, onClose }: SessionExpiredM
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50" />
+      <div className="absolute inset-0 bg-[var(--bg-primary)]/50" />
 
       {/* Modal */}
-      <div className="relative bg-white rounded-lg shadow-xl p-6 max-w-sm w-full mx-4">
-        <h2 className="text-lg font-semibold text-gray-900 mb-2">
+      <div className="relative bg-(--bg-surface) rounded-lg shadow-xl p-6 max-w-sm w-full mx-4">
+        <h2 className="text-lg font-semibold text-(--text-primary) mb-2">
           Session Expired
         </h2>
         <p className="text-gray-600 mb-6">
@@ -30,7 +30,7 @@ export default function SessionExpiredModal({ isOpen, onClose }: SessionExpiredM
         </p>
         <button
           onClick={handleLogin}
-          className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+          className="w-full bg-(--brand-yellow) text-(--bg-primary) py-2 px-4 rounded-lg hover:bg-(--brand-yellow-soft) transition-colors"
         >
           Log In
         </button>

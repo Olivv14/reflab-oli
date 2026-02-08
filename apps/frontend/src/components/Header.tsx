@@ -1,0 +1,243 @@
+import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Sidebar } from './Sidebar';
+import { useAuth } from '@/features/auth/components/useAuth';
+// Importa tu logo aquí. Si tu archivo tiene otro nombre (ej: reflab.svg), cámbialo aquí.
+import logo from '@/assets/logos/RefLab Logo No BG.svg';
+
+/**
+ * Hamburger Menu Icon Stub
+ * Accepts onClick and onDoubleClick handlers.
+ */
+const MenuIcon = ({ onClick, onDoubleClick }: { onClick: () => void; onDoubleClick: () => void }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="h-6 w-6 cursor-pointer text-(--text-secondary) hover:text-(--text-primary) transition-colors"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    onClick={onClick}
+    onDoubleClick={onDoubleClick}
+    aria-label="Open menu"
+    role="button"
+  >
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+  </svg>
+);
+
+/**
+ * Search Icon Stub
+ */
+const SearchIcon = ({ onClick }: { onClick: () => void }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="h-6 w-6 cursor-pointer text-(--text-secondary) hover:text-(--text-primary) transition-colors"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    onClick={onClick}
+    aria-label="Search"
+    role="button"
+  >
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+  </svg>
+);
+
+/**
+ * Notification Icon Stub
+ */
+const BellIcon = ({ onClick }: { onClick: () => void }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="h-6 w-6 cursor-pointer text-(--text-secondary) hover:text-(--text-primary) transition-colors"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    onClick={onClick}
+    aria-label="Notifications"
+    role="button"
+  >
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+  </svg>
+);
+
+/**
+ * RefLab Logo Stub
+ * SVG placeholder for the logo.
+ */
+const RefLabLogo = ({ onClick }: { onClick: () => void }) => (
+  <div 
+    className="flex items-center gap-2 cursor-pointer" 
+    onClick={onClick}
+    role="button"
+    aria-label="RefLab Home"
+  >
+    {/* Ajusta el tamaño con h-8 w-8 o w-auto según necesites */}
+    <img src={logo} alt="RefLab Logo" className="h-6 w-auto" />
+    <span className="text-xl font-bold text-(--text-primary)">RefLab</span>
+  </div>
+);
+
+/**
+ * Header Component
+ * Layout: 20% Left (Menu) | 60% Center (Logo) | 20% Right (Search/Notifs)
+ */
+export const Header: React.FC = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Mock notifications data
+  const notifications = [
+    { id: 1, text: "New test available: React Basics", time: "2m ago" },
+    { id: 2, text: "Your profile was updated", time: "1h ago" },
+    { id: 3, text: "Welcome to RefLab!", time: "1d ago" }
+  ];
+
+
+  // --- Hamburger Menu Logic ---
+  // Single click toggles the sidebar
+  const handleHamburgerClick = () => {
+    // If double click happens, this might fire first, but the double click handler will override/close it.
+    // Standard toggle behavior:
+    setIsSidebarOpen((prev) => !prev);
+  };
+
+  // Double click explicitly closes the sidebar (as requested)
+  const handleHamburgerDoubleClick = () => {
+    // Force close on double click
+    setIsSidebarOpen(false);
+  };
+
+  // --- Logo Logic ---
+  const handleLogoClick = () => {
+    if (user) {
+      navigate('/app/dashboard');
+      return;
+    }
+
+    if (location.pathname === '/') {
+      // If on landing page, scroll to top smoothly
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      // If elsewhere, navigate immediately to landing page
+      navigate('/');
+    }
+  };
+
+  // --- Search Logic ---
+  const handleSearchClick = () => {
+    setIsSearchOpen(true);
+    setIsNotificationsOpen(false); // Close others
+  };
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('Searching for:', searchQuery);
+    // Implement actual search navigation or filtering here
+    setIsSearchOpen(false);
+    setSearchQuery('');
+  };
+
+  // --- Notifications Logic ---
+  const handleNotificationsClick = () => {
+    setIsNotificationsOpen((prev) => !prev);
+    setIsSearchOpen(false); // Close others
+  };
+
+  return (
+    <>
+      {/* Navbar Container */}
+      <header className="fixed top-0 left-0 w-full h-16 bg-(--bg-surface) shadow-(--shadow-soft) z-50 flex items-center px-4 border-b border-(--border-subtle) transition-all">
+        
+        {/* [HAMBURGUER MENU 20%] */}
+        <div className="w-[20%] flex justify-start items-center">
+          <MenuIcon 
+            onClick={handleHamburgerClick} 
+            onDoubleClick={handleHamburgerDoubleClick} 
+          />
+        </div>
+
+        {/* [REFLAB LOGO 60%] */}
+        <div className="w-[60%] flex justify-center items-center">
+          <RefLabLogo onClick={handleLogoClick} />
+        </div>
+
+        {/* [SEARCH AND NOTIFICATIONS ICON 20%] */}
+        <div className="w-[20%] flex justify-end items-center gap-3 sm:gap-4">
+          <SearchIcon onClick={handleSearchClick} />
+          <BellIcon onClick={handleNotificationsClick} />
+        </div>
+      </header>
+
+      {/* Sidebar Component */}
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+
+      {/* Search Overlay */}
+      {isSearchOpen && (
+        <div className="fixed inset-0 z-50 bg-(--bg-primary)/50 flex items-start justify-center pt-20 px-4">
+          <div className="bg-(--bg-surface) w-full max-w-md rounded-(--radius-card) shadow-xl p-4 animate-in fade-in slide-in-from-top-5 duration-200 border border-(--border-subtle)">
+            <form onSubmit={handleSearchSubmit} className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Search RefLab..."
+                className="flex-1 px-4 py-2 bg-(--bg-surface-2) border border-(--border-subtle) text-(--text-primary) rounded-(--radius-input) focus:outline-none focus:ring-1 focus:ring-(--brand-yellow) placeholder-(--text-muted)"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                autoFocus
+              />
+              <button type="submit" className="px-4 py-2 bg-(--brand-yellow) text-(--bg-primary) font-bold rounded-(--radius-button) hover:bg-(--brand-yellow-soft)">
+                Go
+              </button>
+              <button 
+                type="button" 
+                onClick={() => setIsSearchOpen(false)}
+                className="px-3 py-2 text-(--text-secondary) hover:bg-(--bg-surface-2) rounded-(--radius-button)"
+              >
+                ✕
+              </button>
+            </form>
+          </div>
+          {/* Click outside to close */}
+          <div className="absolute inset-0 -z-10" onClick={() => setIsSearchOpen(false)} />
+        </div>
+      )}
+      
+      {/* Notifications Dropdown */}
+      {isNotificationsOpen && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setIsNotificationsOpen(false)} />
+          <div className="fixed top-16 right-4 w-80 bg-(--bg-surface) rounded-(--radius-card) shadow-xl border border-(--border-subtle) z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-3 border-b border-(--border-subtle) bg-(--bg-surface-2) flex justify-between items-center">
+              <h3 className="font-semibold text-(--text-primary)">Notifications</h3>
+              <span className="text-xs bg-(--brand-yellow)/20 text-(--brand-yellow) px-2 py-0.5 rounded-full">{notifications.length}</span>
+            </div>
+            <div className="max-h-96 overflow-y-auto">
+              {notifications.map((notif) => (
+                <div key={notif.id} className="p-4 border-b border-(--border-subtle) hover:bg-(--bg-surface-2) transition-colors cursor-pointer">
+                  <p className="text-sm text-(--text-primary)">{notif.text}</p>
+                  <p className="text-xs text-(--text-muted) mt-1">{notif.time}</p>
+                </div>
+              ))}
+              {notifications.length === 0 && (
+                <div className="p-8 text-center text-(--text-muted) text-sm">No new notifications</div>
+              )}
+            </div>
+            <div className="p-2 text-center border-t border-(--border-subtle)">
+              <button onClick={() => navigate('/app/notifications')} className="text-xs text-(--brand-yellow) hover:underline font-medium">
+                View all notifications
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Spacer to prevent content from being hidden behind fixed header */}
+      <div className="h-16" />
+    </>
+  );
+};

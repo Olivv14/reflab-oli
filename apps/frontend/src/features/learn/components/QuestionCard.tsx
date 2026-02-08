@@ -31,10 +31,10 @@ export default function QuestionCard({
   ]
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
+    <div className="bg-(--bg-surface) rounded-(--radius-card) border border-(--border-subtle) p-6">
       {/* Question header */}
       <div className="mb-4">
-        <span className="text-sm text-gray-500">
+        <span className="text-sm text-(--text-muted)">
           Question {questionNumber} of {totalQuestions}
         </span>
       </div>
@@ -57,8 +57,8 @@ export default function QuestionCard({
               className={`
                 w-full text-left p-4 rounded-lg border-2 transition-all
                 ${isSelected
-                  ? 'border-blue-500 bg-blue-50 text-blue-900'
-                  : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                  ? 'border-(--info) bg-(--info)/10 text-(--text-primary)'
+                  : 'border-(--border-subtle) hover:border-(--border-strong) hover:bg-(--bg-hover)'
                 }
                 ${isLocked ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'}
               `}

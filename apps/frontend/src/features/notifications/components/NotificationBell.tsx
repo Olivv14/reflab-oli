@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Bell } from 'lucide-react'
-import { useAuth } from '@/features/auth/components/AuthProvider'
+import { useAuth } from '@/features/auth/components/useAuth'
 import { getUnreadCount } from '../api/notificationsApi'
 
 export default function NotificationBell() {

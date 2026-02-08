@@ -40,9 +40,9 @@ export default function TestsTab() {
     return (
       <div className="p-6">
         <div className="animate-pulse space-y-4">
-          <div className="h-24 bg-gray-200 rounded-lg"></div>
-          <div className="h-24 bg-gray-200 rounded-lg"></div>
-          <div className="h-24 bg-gray-200 rounded-lg"></div>
+          <div className="h-24 bg-(--bg-surface-2) rounded-(--radius-card)"></div>
+          <div className="h-24 bg-(--bg-surface-2) rounded-(--radius-card)"></div>
+          <div className="h-24 bg-(--bg-surface-2) rounded-(--radius-card)"></div>
         </div>
       </div>
     )
@@ -53,7 +53,7 @@ export default function TestsTab() {
     return (
       <div className="p-6">
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-700">Error loading tests: {error}</p>
+          <p className="text-(--error)">Error loading tests: {error}</p>
         </div>
       </div>
     )
@@ -64,7 +64,7 @@ export default function TestsTab() {
     return (
       <div className="p-6">
         <div className="text-center py-12">
-          <p className="text-gray-500">No tests available yet.</p>
+          <p className="text-(--text-muted)">No tests available yet.</p>
         </div>
       </div>
     )
@@ -78,10 +78,10 @@ export default function TestsTab() {
           <button
             key={test.id}
             onClick={() => navigate(`/app/learn/test/${test.slug}`)}
-            className="w-full text-left bg-white border border-gray-200 rounded-lg p-6 hover:border-blue-300 hover:shadow-sm transition-all"
+            className="w-full text-left bg-(--bg-surface) border border-(--border-subtle) rounded-(--radius-card) p-6 hover:border-(--info) hover:shadow-sm transition-all"
           >
             <h3 className="text-lg font-semibold text-gray-900">{test.title}</h3>
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-(--text-muted)">
               Click to start test
             </p>
           </button>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAuth } from "./AuthProvider";
+import { useAuth } from "./useAuth";
 
 interface ForgotPasswordProps {
   onBackToLogin: () => void;
@@ -67,32 +67,32 @@ export default function ForgotPassword({ onBackToLogin }: ForgotPasswordProps) {
       <button
         type="button"
         onClick={onBackToLogin}
-        className="mb-4 text-sm text-blue-600 hover:text-blue-500 flex items-center gap-1"
+        className="mb-4 text-sm text-(--brand-yellow) hover:text-(--brand-yellow-soft) hover:underline flex items-center gap-1"
       >
         <span>&larr;</span> Back to login
       </button>
 
-      <h2 className="text-xl font-semibold mb-2">Reset your password</h2>
-      <p className="text-gray-600 text-sm mb-4">
+      <h2 className="text-xl font-bold text-(--text-primary) mb-2">Reset your password</h2>
+      <p className="text-(--text-secondary) text-sm mb-4">
         Enter your email address and we'll send you a link to reset your password.
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Success message */}
         {successMessage && (
-          <div className="p-3 bg-green-50 border border-green-200 text-green-700 rounded-md text-sm">
+          <div className="p-3 rounded-(--radius-input) bg-(--success)/10 border border-(--success)/20 text-(--success) text-sm">
             {successMessage}
           </div>
         )}
 
         {/* Error message */}
         {error && (
-          <div className="text-red-500 text-sm">{error}</div>
+          <div className="p-3 rounded-(--radius-input) bg-(--error)/10 border border-(--error)/20 text-(--error) text-sm text-center">{error}</div>
         )}
 
         {/* Email field */}
-        <div>
-          <label htmlFor="forgot-email" className="block text-sm font-medium text-gray-700">
+        <div className="space-y-2">
+          <label htmlFor="forgot-email" className="block text-sm font-medium text-(--text-secondary)">
             Email
           </label>
           <input
@@ -101,7 +101,15 @@ export default function ForgotPassword({ onBackToLogin }: ForgotPasswordProps) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             disabled={loading}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+            className="w-full px-4 py-3 outline-none transition-all
+              bg-(--bg-surface-2) 
+              border border-(--border-subtle) 
+              rounded-(--radius-input) 
+              text-(--text-primary) 
+              placeholder-(--text-muted)
+              focus:border-(--brand-yellow) 
+              focus:ring-1 focus:ring-(--brand-yellow)
+              disabled:opacity-50 disabled:cursor-not-allowed"
             placeholder="you@example.com"
           />
         </div>
@@ -110,7 +118,13 @@ export default function ForgotPassword({ onBackToLogin }: ForgotPasswordProps) {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full py-3.5 px-4 font-bold transition-all transform active:scale-[0.98]
+            bg-(--brand-yellow) 
+            text-(--bg-primary) 
+            rounded-(--radius-button)
+            hover:bg-(--brand-yellow-soft) 
+            hover:shadow-[0_0_15px_rgb(var(--brand-yellow)/0.3)]
+            disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? "Sending..." : "Send reset link"}
         </button>
